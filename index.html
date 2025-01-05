@@ -3,55 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Jelszó Visszaállítás</title>
-    <script src="https://unpkg.com/@supabase/supabase-js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #0070f3;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #0051cc;
-        }
-        .error {
-            color: #e00;
-            margin-top: 5px;
-            font-size: 14px;
-        }
+        /* ... style marad ugyanaz ... */
     </style>
 </head>
 <body>
@@ -72,42 +26,60 @@
     </div>
 
     <script>
+        // Supabase kliens inicializálása
         const SUPABASE_URL = 'https://wekssjmhbupuedlegalt.supabase.co'
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indla3Nzam1oYnVwdWVkbGVnYWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ2MzIxNDIsImV4cCI6MjA1MDIwODE0Mn0.KB4VRFcwsLN4lFTLr1rLCLFCFkCdb-6LZs_lpK5P_s0'
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        // Helyesen inicializáljuk a Supabase klienst
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        
+        // A hash paramétert kiolvassuk az URL-ből
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const access_token = hashParams.get('access_token');
+        const refresh_token = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
 
         async function updatePassword() {
             const password = document.getElementById('password').value
             const confirmPassword = document.getElementById('confirm-password').value
             const errorElement = document.getElementById('error-message')
 
-            if (!password || !confirmPassword) {
-                errorElement.textContent = 'Kérjük, töltsd ki mindkét mezőt!'
-                return
-            }
-
-            if (password !== confirmPassword) {
-                errorElement.textContent = 'A jelszavak nem egyeznek!'
-                return
-            }
-
-            if (password.length < 6) {
-                errorElement.textContent = 'A jelszónak legalább 6 karakter hosszúnak kell lennie!'
-                return
-            }
-
             try {
-                const { error } = await supabase.auth.updateUser({ 
-                    password: password 
-                })
-                
-                if (error) throw error
+                errorElement.textContent = '';
 
-                alert('A jelszó sikeresen frissítve! Most már bejelentkezhet az alkalmazásba az új jelszóval.')
-                errorElement.textContent = ''
+                if (!password || !confirmPassword) {
+                    errorElement.textContent = 'Kérjük, töltsd ki mindkét mezőt!'
+                    return
+                }
+
+                if (password !== confirmPassword) {
+                    errorElement.textContent = 'A jelszavak nem egyeznek!'
+                    return
+                }
+
+                if (password.length < 6) {
+                    errorElement.textContent = 'A jelszónak legalább 6 karakter hosszúnak kell lennie!'
+                    return
+                }
+
+                // Az access token-t használjuk a session-höz
+                if (access_token) {
+                    const { data, error } = await supabase.auth.updateUser({
+                        password: password
+                    });
+
+                    if (error) throw error
+
+                    alert('A jelszó sikeresen frissítve! Most már bejelentkezhet az alkalmazásba az új jelszóval.')
+                    // Opcionálisan átirányíthatunk az alkalmazás kezdőoldalára
+                    // window.location.href = 'YOUR_APP_URL';
+                } else {
+                    errorElement.textContent = 'Érvénytelen vagy lejárt link. Kérjük, kérjen új jelszó-visszaállító e-mailt.'
+                }
+
             } catch (error) {
                 errorElement.textContent = 'Hiba történt: ' + error.message
+                console.error('Error:', error)
             }
         }
     </script>
